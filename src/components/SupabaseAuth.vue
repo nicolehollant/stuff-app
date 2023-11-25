@@ -14,6 +14,7 @@
     >
       Send Magic Link
     </SenpButton>
+    <p>{{ getURL() }}</p>
   </div>
 </template>
 
@@ -48,10 +49,12 @@ const supabase = useSupabaseClient()
 const loading = ref(false)
 const email = ref("")
 
+const config = useRuntimeConfig()
+
 const getURL = () => {
   let url =
-    useRuntimeConfig().public.SITE_URL ?? // Set this to your site URL in production env.
-    useRuntimeConfig().public.VERCEL_URL ?? // Automatically set by Vercel.
+    config.public.SITE_URL ?? // Set this to your site URL in production env.
+    config.public.VERCEL_URL ?? // Automatically set by Vercel.
     "http://localhost:3000/"
   // Make sure to include `https://` when not localhost.
   url = url.includes("http") ? url : `https://${url}`
