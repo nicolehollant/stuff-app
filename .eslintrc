@@ -1,0 +1,28 @@
+{
+  "root": true,
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "extends": [
+    "@nuxtjs/eslint-config-typescript",
+    "prettier"
+  ],
+  "overrides": [
+    {
+      "files": "**/*.vue",
+      "rules": {
+        "vue/no-multiple-template-root": "off",
+        "no-console": "off"
+      }
+    },
+    {
+      "files": [
+        "./server/**/*.ts"
+      ],
+      "rules": {
+        "no-console": "off"
+      }
+    }
+  ]
+}
