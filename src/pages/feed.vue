@@ -1,10 +1,49 @@
 <template>
-  <div class="grid gap-4">
-    <div>
-      <h1 class="text-xl">{{ new Date().toDateString() }}</h1>
-      <p class="text-xs text-gray-500">
-        {{ new Date().toISOString().split("T")[0] }}
-      </p>
+  <div v-if="state.date" class="grid gap-4">
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <h1 class="text-xl">
+          {{ DateTime.fromISO(state.date).toLocaleString(DateTime.DATE_FULL) }}
+        </h1>
+        <p class="text-xs text-gray-500">
+          {{ DateTime.fromISO(state.date).toLocaleString(DateTime.DATE_SHORT) }}
+        </p>
+      </div>
+      <div class="flex items-center -space-x-px">
+        <NuxtLink :to="`/feed?date=${pagination.prev}`">
+          <SenpButton
+            size="sm"
+            square
+            :classes="{
+              button: '!bg-gray-900 border border-gray-800 !rounded-r-none',
+            }"
+            intent="secondary"
+            leading="mdi:chevron-left"
+          />
+        </NuxtLink>
+        <NuxtLink :to="`/feed?date=${pagination.today}`">
+          <SenpButton
+            size="sm"
+            square
+            label="Today"
+            :classes="{
+              button: '!bg-gray-900 border border-gray-800 !rounded-none',
+            }"
+            intent="secondary"
+          />
+        </NuxtLink>
+        <NuxtLink :to="`/feed?date=${pagination.next}`">
+          <SenpButton
+            size="sm"
+            square
+            :classes="{
+              button: '!bg-gray-900 border border-gray-800 !rounded-l-none',
+            }"
+            intent="secondary"
+            leading="mdi:chevron-right"
+          />
+        </NuxtLink>
+      </div>
     </div>
     <p v-if="stuffTypesLoading">loading...</p>
     <div class="grid md:grid-cols-2 gap-4">
@@ -68,7 +107,25 @@
 </template>
 
 <script setup lang="ts">
+import { DateTime } from "luxon"
+
+const route = useRoute()
+const router = useRouter()
 const supabase = useSupabaseClient()
+const state = reactive({
+  date: null as null | string,
+})
+const pagination = computed(() => {
+  const today = DateTime.local().toISODate()
+  const current = DateTime.fromISO(state.date || today)
+  const prev = current.minus({ day: 1 })
+  const next = current.plus({ day: 1 })
+  return {
+    prev: prev.toISODate(),
+    next: next.toISODate(),
+    today,
+  }
+})
 
 const loading = ref(true)
 const modalUp = ref(false)
@@ -122,27 +179,21 @@ const { exec: loadStuffTypes, loading: stuffTypesLoading } = useLoading(
     }
   },
 )
-loadStuffTypes()
 
-const { exec: loadStuffEntries, loading: stuffEntriesLoading } = useLoading(
-  async () => {
-    const res = await supabase
-      .from("stuff_entry")
-      .select(
-        `id, user_id, stuff_type_id, value, inserted_at, entry_date, updated_at`,
-      )
-      .eq("user_id", user.value?.id || "-1")
-      .filter("entry_date", "eq", new Date().toISOString().split("T")[0])
+const { exec: loadStuffEntries } = useLoading(async () => {
+  const res = await supabase
+    .from("stuff_entry")
+    .select(
+      `id, user_id, stuff_type_id, value, inserted_at, entry_date, updated_at`,
+    )
+    .eq("user_id", user.value?.id || "-1")
+    .filter("entry_date", "eq", state.date)
 
-    if (res.data) {
-      console.log({ data: res.data })
-      entries.value = res.data
-    }
-  },
-)
-loadStuffEntries()
-
-loading.value = false
+  if (res.data) {
+    console.log({ data: res.data })
+    entries.value = res.data
+  }
+})
 
 function addStuffType() {
   currentStuffType.value = {
@@ -197,7 +248,7 @@ async function addOrUpdateStuffType(params: {
 
       stuff_type_id: params.stuff_type_id,
       value: params.value,
-      entry_date: new Date().toISOString().split("T")[0],
+      entry_date: state.date,
 
       user_id: user.value?.id || "-1",
       updated_at: new Date(),
@@ -215,4 +266,34 @@ async function addOrUpdateStuffType(params: {
     loading.value = false
   }
 }
+
+async function load() {
+  loading.value = true
+  await loadStuffTypes()
+  await loadStuffEntries()
+
+  loading.value = false
+}
+
+watch(
+  () => route.query?.date,
+  () => {
+    if (route.query?.date) {
+      const date = DateTime.fromISO(route.query.date + "")
+      state.date = date.toISODate()
+      load()
+    }
+  },
+)
+
+onMounted(() => {
+  if (!route.query?.date) {
+    const date = DateTime.local().toISODate()
+    router.push(`/feed?date=${date}`)
+    return
+  }
+  const date = DateTime.fromISO(route.query.date + "")
+  state.date = date.toISODate()
+  load()
+})
 </script>
