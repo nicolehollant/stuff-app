@@ -13,15 +13,30 @@
       "files": "**/*.vue",
       "rules": {
         "vue/no-multiple-template-root": "off",
-        "no-console": "off"
+        "no-console": "off",
+        "no-unused-vars": "off",
+        "@typescript-eslint/no-unused-vars": "off"
       }
     },
     {
       "files": [
-        "./server/**/*.ts"
+        "**/composables/**/*.ts",
+        "**/utils/**/*.ts",
+        "**/plugins/**/*.ts"
       ],
       "rules": {
-        "no-console": "off"
+        "no-console": "off",
+        "no-unused-vars": "off",
+        "@typescript-eslint/no-unused-vars": "off"
+      }
+    },
+    {
+      "files": [
+        "**/server/**/*.ts"
+      ],
+      "rules": {
+        "no-console": "off",
+        "no-unused-vars": "off"
       }
     }
   ]

@@ -111,7 +111,6 @@ const { exec: loadStuffTypes, loading: stuffTypesLoading } = useLoading(
       .eq("user_id", user.value?.id || "-1")
 
     if (res.data) {
-      console.log({ data: res.data })
       data.value = res.data
     }
   },

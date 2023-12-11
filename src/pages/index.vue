@@ -1,12 +1,11 @@
 <template>
-  <Teleport to="#header-leading">
-    <h1 class="text-xl">Settings</h1>
-  </Teleport>
-  <div v-if="user" class="flex flex-col gap-8">
-    <SupabaseAccount />
-    <StuffSettings />
+  <div class="p-4">
+    <div v-if="user" class="flex flex-col gap-8">
+      <StuffSettings />
+      <SupabaseAccount />
+    </div>
+    <p v-else>loading...</p>
   </div>
-  <p v-else>loading...</p>
 </template>
 
 <script setup lang="ts">

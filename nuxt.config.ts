@@ -3,6 +3,7 @@ export default defineNuxtConfig({
   supabase: {
     redirect: false,
   },
+  ssr: false,
   runtimeConfig: {
     public: {
       SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,

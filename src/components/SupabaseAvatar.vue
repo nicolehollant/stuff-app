@@ -41,7 +41,6 @@ const modalUp = ref(false)
 
 const downloadImage = async () => {
   try {
-    console.log({ "path.value": path.value })
     if (!path.value) {
       return
     }
@@ -84,9 +83,12 @@ const uploadAvatar = async (evtFile: File) => {
 
 downloadImage()
 
-watch(path, () => {
-  if (path.value) {
-    downloadImage()
-  }
-})
+watch(
+  () => path.value,
+  () => {
+    if (path.value) {
+      downloadImage()
+    }
+  },
+)
 </script>

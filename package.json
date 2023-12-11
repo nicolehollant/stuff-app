@@ -34,9 +34,10 @@
     "nanoid": "^4.0.2",
     "next-auth": "^4.21.1",
     "nuxt-icon": "^0.6.6",
-    "senp-ui": "^0.1.6",
+    "senp-ui": "^0.1.7",
     "superjson": "^1.12.2",
     "trpc-nuxt": "^0.7.0",
+    "vue-safe-teleport": "^0.1.2",
     "zod": "^3.21.2"
   }
 }
