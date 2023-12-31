@@ -25,3 +25,62 @@ export function useSupabaseUserCb(
     .finally(params?.onSettled)
   return user
 }
+
+export function useSupabaseAvatar(
+  initialValues?: Partial<{
+    avatarPath: string
+    username: string
+    src: string
+  }>,
+) {
+  const supabase = useSupabaseClient()
+  const user = useSupabaseUser()
+  const avatar = reactive({
+    avatarPath: initialValues?.avatarPath ?? "",
+    username: initialValues?.username ?? "",
+    src: initialValues?.src ?? "",
+  })
+
+  async function getUser() {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(`username, avatar_url`)
+        .eq("id", user.value?.id || -1)
+        .single()
+      if (error) throw error
+      avatar.avatarPath = data.avatar_url
+      avatar.username = data.username
+      return avatar
+    } catch (error: any) {
+      console.error("Error getting user: ", error.message)
+      return avatar
+    }
+  }
+
+  async function downloadImage(getUserForEmptyPath = true) {
+    try {
+      if (!avatar.avatarPath && getUserForEmptyPath) {
+        await getUser()
+      }
+      if (!avatar.avatarPath) {
+        return
+      }
+      const { data, error } = await supabase.storage
+        .from("avatars")
+        .download(avatar.avatarPath)
+      if (error) throw error
+      avatar.src = URL.createObjectURL(data)
+      return avatar
+    } catch (error: any) {
+      console.error("Error downloading image: ", error.message)
+      return avatar
+    }
+  }
+
+  return {
+    getUser,
+    downloadImage,
+    avatar,
+  }
+}

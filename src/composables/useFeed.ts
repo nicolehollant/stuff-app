@@ -22,6 +22,19 @@ export function useFeed(params: {
       prev: prev.toISODate(),
       next: next.toISODate(),
       today,
+      current,
+      day: {
+        prev: current.minus({ day: 1 }).toISODate(),
+        next: current.plus({ day: 1 }).toISODate(),
+      },
+      week: {
+        prev: current.minus({ week: 1 }).toISODate(),
+        next: current.plus({ week: 1 }).toISODate(),
+      },
+      month: {
+        prev: current.minus({ month: 1 }).toISODate(),
+        next: current.plus({ month: 1 }).toISODate(),
+      },
     }
   })
 

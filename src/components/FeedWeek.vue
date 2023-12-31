@@ -1,79 +1,104 @@
 <template>
-  <div v-if="feedState.date" class="flex flex-col gap-4 grow overflow-hidden">
-    <div class="flex items-center justify-between gap-4 px-4 pt-4">
-      <div>
-        <h1 class="text-xl">
-          {{
-            DateTime.fromISO(feedState.date).toLocaleString(DateTime.DATE_FULL)
-          }}
+  <div
+    v-if="feedState.date"
+    class="relative grid grid-rows-[auto,minmax(0,1fr)] h-full"
+  >
+    <FeedWeekdays
+      mode="week"
+      :feed-pagination="feedPagination"
+      :date-bounds="dateBounds"
+      :feed-state="feedState"
+      class="sticky top-16 bg-gray-950/60 backdrop-blur"
+    />
+
+    <SafeTeleport to="#header-leading">
+      <div class="w-max text-right h-16 flex items-center bg-gray-900/40 px-4">
+        <h1 class="text-xl hidden md:inline-block leading-tight">
+          <span class="font-black tracking-tight">
+            {{ DateTime.fromISO(feedState.date).monthLong }}
+          </span>
+          <span class="font-light text-gray-200">
+            {{ " " + DateTime.fromISO(feedState.date).year }}
+          </span>
         </h1>
-        <p class="text-xs text-gray-500">
-          {{
-            DateTime.fromISO(feedState.date).toLocaleString(DateTime.DATE_SHORT)
-          }}
-        </p>
+        <h1 class="md:hidden text-base">
+          <span class="font-black tracking-tight">
+            {{ DateTime.fromISO(feedState.date).monthShort }}
+          </span>
+          <span class="font-light text-gray-200">
+            {{ " " + DateTime.fromISO(feedState.date).year }}
+          </span>
+        </h1>
       </div>
+    </SafeTeleport>
+    <SafeTeleport to="#header-trailing">
       <div class="flex items-center -space-x-px">
-        <NuxtLink :to="`/feed?date=${feedPagination.prev}&mode=week`">
+        <NuxtLink
+          v-slot="{ navigate, href }"
+          custom
+          :to="`/?date=${feedPagination.prev}&mode=week`"
+        >
           <SenpButton
-            size="sm"
+            size="xs"
+            :href="href"
+            class="h-max"
             square
             :classes="{
               button: '!bg-gray-900 border border-gray-800 !rounded-r-none',
             }"
             intent="secondary"
             leading="mdi:chevron-left"
+            @click="navigate"
           />
         </NuxtLink>
-        <NuxtLink :to="`/feed?date=${feedPagination.today}&mode=week`">
+        <NuxtLink
+          v-slot="{ navigate, href }"
+          custom
+          :to="`/?date=${feedPagination.today}&mode=week`"
+        >
           <SenpButton
-            size="sm"
+            size="xs"
+            :href="href"
+            class="h-max"
             square
             label="Today"
             :classes="{
               button: '!bg-gray-900 border border-gray-800 !rounded-none',
             }"
             intent="secondary"
+            @click="navigate"
           />
         </NuxtLink>
-        <NuxtLink :to="`/feed?date=${feedPagination.next}&mode=week`">
+        <NuxtLink
+          v-slot="{ navigate, href }"
+          custom
+          :to="`/?date=${feedPagination.next}&mode=week`"
+        >
           <SenpButton
-            size="sm"
+            size="xs"
+            :href="href"
+            class="h-max"
             square
             :classes="{
               button: '!bg-gray-900 border border-gray-800 !rounded-l-none',
             }"
             intent="secondary"
             leading="mdi:chevron-right"
+            @click="navigate"
           />
         </NuxtLink>
       </div>
-    </div>
-    <p v-if="getStuffTypes.loading.value">loading...</p>
+    </SafeTeleport>
+    <p v-if="!stuffTypes?.length && getStuffTypes.loading.value">loading...</p>
     <div
-      class="grid grid-flow-col auto-cols-[100%] px-4 md:grid-cols-7 md:w-full h-full overflow-y-hidden overflow-x-auto no-scrollbar edge-mask snap-x snap-mandatory"
+      ref="weekContainer"
+      class="grid grid-flow-col auto-cols-[100%] md:grid-cols-7 md:w-full h-full overflow-y-hidden overflow-x-auto no-scrollbar edge-mask snap-x snap-mandatory px-8 md:px-12"
     >
       <section
         v-for="dayOffset of 7"
         :key="dayOffset"
-        class="snap-center snap-always grid grid-rows-[auto,minmax(0,1fr)] h-full overflow-hidden w-full"
+        class="snap-center snap-always h-full overflow-hidden w-full"
       >
-        <div
-          class="h-10 flex items-center justify-center gap-2 border-b-2 border-gray-800"
-        >
-          <p class="text-center">
-            {{ dateBounds.week.gte.plus({ day: dayOffset - 1 }).weekdayShort }}
-          </p>
-          <span
-            class="flex items-center justify-center w-7 h-7 rounded-full"
-            :class="{
-              'bg-blue-500 text-gray-950 ':
-                feedPagination.today ===
-                dateBounds.week.gte.plus({ day: dayOffset - 1 }).toISODate(),
-            }"
-            >{{ dateBounds.week.gte.plus({ day: dayOffset - 1 }).day }}</span
-          >
-        </div>
         <div
           class="h-full overflow-auto border-l border-gray-800 border-b flex flex-col divide-y divide-gray-900 divide-dashed p-1"
           :class="{ 'border-r': dayOffset === 7 }"
@@ -143,36 +168,6 @@
         </div>
       </section>
     </div>
-    <!-- <div class="grid md:grid-cols-2 gap-4">
-      <button
-        v-for="stuff in stuffTypes"
-        :key="stuff.id"
-        class="outline-none focus:outline-none group text-left h-full"
-        @click="() => editStuffType(stuff)"
-      >
-        <SenpCard
-          class="border-2 border-gray-800/30 hover:!bg-gray-900/70 transition duration-200 group-focus:ring h-full"
-        >
-          <div class="">
-            <p class="text-lg">{{ stuff.title }}</p>
-            <p class="text-sm text-gray-400">{{ stuff.description }}</p>
-          </div>
-          <hr class="border-gray-700/30 border-dashed" />
-          <div
-            v-if="
-              stuffEntries?.some((entry) => entry.stuff_type_id === stuff.id)
-            "
-            class="flex flex-col gap-4"
-          >
-            <pre class="whitespace-pre-wrap font-sans">{{
-              stuffEntries.find((entry) => entry.stuff_type_id === stuff.id)
-                ?.value
-            }}</pre>
-          </div>
-          <p v-else>No entry yet</p>
-        </SenpCard>
-      </button>
-    </div> -->
   </div>
   <SenpDrawer
     v-model:open="state.modalUp"
@@ -234,7 +229,7 @@ const {
   getStuffEntries,
   deleteStuffType,
   upsertStuffType,
-} = useFeed({ mode: "week", watchDate: true, weekOffset: -1 })
+} = useFeed({ mode: "week", watchDate: true, weekOffset: 0 })
 
 const state = reactive({
   modalUp: false,
@@ -274,10 +269,100 @@ function editStuffType(
   state.modalUp = true
 }
 
+const weekContainer = ref<HTMLDivElement>()
+
+function useActiveScrollSnapElement(options: {
+  container: HTMLElement
+  runImmediately?: boolean
+  noListener?: boolean
+  onScrollSettled?: (params: {
+    offsets: {
+      offset: number
+      element: Element
+      index: number
+    }[]
+    minOffset: {
+      offset: number
+      element: Element
+      index: number
+    }
+  }) => void
+}) {
+  // Timer, used to detect whether horizontal scrolling is over
+  let timer: NodeJS.Timeout | null = null
+  function effect() {
+    if (timer) {
+      clearTimeout(timer)
+    }
+    // Renew timer
+    timer = setTimeout(() => {
+      const offsets = [...options.container.children].map((element, index) => {
+        const offset = Math.abs(
+          element.getBoundingClientRect().left -
+            options.container.getBoundingClientRect().left,
+        )
+        console.log({ offset, element, index })
+        return { offset, element, index }
+      })
+      const minOffsetDistance = Math.min(...offsets.map((el) => el.offset))
+      const minOffset = offsets.find(
+        (offset) => offset.offset === minOffsetDistance,
+      )!
+      if (options?.onScrollSettled) {
+        options?.onScrollSettled({ offsets, minOffset })
+      }
+    }, 100)
+  }
+  // Scrolling event start
+  if (!options?.noListener) {
+    options.container.addEventListener("scroll", effect)
+  }
+  if (options?.runImmediately) {
+    nextTick(() => {
+      effect()
+    })
+  }
+}
+
+const activeSnapIndex = ref<number | null>(0)
+
+watch(
+  () => route.query?.date,
+  () => {
+    if (!weekContainer.value) {
+      return
+    }
+    useActiveScrollSnapElement({
+      container: weekContainer.value!,
+      runImmediately: true,
+      noListener: true,
+      onScrollSettled({ minOffset }) {
+        if (!weekContainer.value) {
+          return
+        }
+        const date = DateTime.fromISO(route.query.date + "")
+        if (window.innerWidth < 768) {
+          activeSnapIndex.value = date.weekday - 1
+          if (minOffset.index !== activeSnapIndex.value) {
+            weekContainer.value.scrollTo({
+              behavior: "smooth",
+              left:
+                weekContainer.value.scrollLeft +
+                [...weekContainer.value.children][
+                  activeSnapIndex.value
+                ].getBoundingClientRect().left,
+            })
+          }
+        }
+      },
+    })
+  },
+)
+
 onMounted(() => {
   if (!route.query?.date) {
     const date = DateTime.local().toISODate()
-    router.push(`/feed?date=${date}&mode=week`)
+    router.push(`/?date=${date}&mode=week`)
     return
   }
   const date = DateTime.fromISO(route.query.date + "")
@@ -286,5 +371,32 @@ onMounted(() => {
   }
   getStuffTypes.exec()
   getStuffEntries.exec()
+  useActiveScrollSnapElement({
+    container: weekContainer.value!,
+
+    onScrollSettled({ minOffset }) {
+      if (window.innerWidth >= 768) {
+        activeSnapIndex.value = null
+      } else if (
+        feedState.date !==
+        dateBounds.value.week.gte.plus({ day: minOffset.index }).toISODate()
+      ) {
+        router.push(
+          `/?date=${dateBounds.value.week.gte
+            .plus({ day: minOffset.index })
+            .toISODate()}&mode=week`,
+        )
+      }
+    },
+  })
+  if (window.innerWidth < 768 && weekContainer.value) {
+    const indexOfActiveDateInWeek = date.weekday - 1
+    weekContainer.value.scrollTo({
+      behavior: "smooth",
+      left: [...weekContainer.value.children][
+        indexOfActiveDateInWeek
+      ].getBoundingClientRect().left,
+    })
+  }
 })
 </script>

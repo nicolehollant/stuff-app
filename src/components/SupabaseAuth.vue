@@ -1,55 +1,85 @@
 <template>
   <div class="space-y-4">
     <h2 class="text-2xl tracking-tight">Sign in to StuffApp</h2>
-    <p class="text-gray-400">Sign in via magic link with your email below</p>
   </div>
   <div class="space-y-2">
-    <SenpTextInput v-model="email" />
-    <SenpButton
-      :classes="{ button: 'w-full justify-center' }"
-      size="xl"
-      :loading="loading"
-      intent="outline"
-      @click="() => handleLogin()"
+    <SenpTab
+      v-slot="{ active }"
+      v-model="strategy"
+      :classes="{
+        optionsWrapper: { extend: 'justify-around w-96' },
+        options: { extend: 'w-full' },
+      }"
+      :options="['Magic Link', 'Verification Code']"
     >
-      Send Magic Link
-    </SenpButton>
-    <p>{{ getURL() }}</p>
+      <template v-if="active === 'Magic Link'">
+        <SenpCard class="w-96 !block space-y-2 text-left">
+          <SenpTextInput
+            v-model="email"
+            label="Email"
+            placeholder="user@example.com"
+          />
+          <SenpButton
+            :classes="{ button: 'w-full justify-center' }"
+            size="xl"
+            :loading="handleLogin.loading.value"
+            intent="outline"
+            @click="() => handleLogin.exec()"
+          >
+            Send Magic Link
+          </SenpButton>
+        </SenpCard>
+        <p class="w-96 text-gray-400 text-sm">
+          Enter your email and follow the magic link you receive to sign in or
+          return and enter the verification code
+        </p>
+      </template>
+      <!-- <hr class="border-gray-800 border-dashed" /> -->
+      <template v-if="active === 'Verification Code'">
+        <SenpCard class="w-96 !block space-y-2 text-left">
+          <SenpTextInput
+            v-model="email"
+            label="Email"
+            placeholder="user@example.com"
+          />
+          <SenpTextInput v-model="token" label="Code" placeholder="518231" />
+          <SenpButton
+            :classes="{ button: 'w-full justify-center' }"
+            size="xl"
+            :loading="handleToken.loading.value"
+            intent="outline"
+            @click="() => handleToken.exec()"
+          >
+            Verify Code
+          </SenpButton>
+          <SenpButton
+            :classes="{ button: 'w-full justify-center' }"
+            size="xl"
+            :loading="handleLogin.loading.value"
+            intent="ghost"
+            @click="() => handleLogin.exec()"
+          >
+            Resend Code
+          </SenpButton>
+        </SenpCard>
+        <p class="w-96 text-gray-400 text-sm">
+          Enter your email and enter the verification code you receive to sign
+          in
+        </p>
+      </template>
+    </SenpTab>
   </div>
 </template>
-
-<!-- <template>
-  <form class="flex-center flex" @submit.prevent="handleLogin">
-    <div class="col-6 form-widget">
-      <h1 class="header">Supabase + Nuxt 3</h1>
-      <p class="description">Sign in via magic link with your email below</p>
-      <div>
-        <input
-          v-model="email"
-          class="inputField"
-          type="email"
-          placeholder="Your email"
-        />
-      </div>
-      <div>
-        <input
-          type="submit"
-          class="button block"
-          :value="loading ? 'Loading' : 'Send magic link'"
-          :disabled="loading"
-        />
-      </div>
-    </div>
-  </form>
-</template> -->
 
 <script setup lang="ts">
 const supabase = useSupabaseClient()
 
-const loading = ref(false)
+const strategy = ref("Magic Link")
 const email = ref("")
-
+const token = ref("")
 const config = useRuntimeConfig()
+
+const router = useRouter()
 
 const getURL = () => {
   let url =
@@ -63,9 +93,8 @@ const getURL = () => {
   return url
 }
 
-const handleLogin = async () => {
+const handleLogin = useLoading(async () => {
   try {
-    loading.value = true
     const { error } = await supabase.auth.signInWithOtp({
       email: email.value,
       options: {
@@ -76,8 +105,26 @@ const handleLogin = async () => {
     alert("Check your email for the login link!")
   } catch (error: any) {
     alert(error.error_description || error.message)
-  } finally {
-    loading.value = false
   }
-}
+})
+const handleToken = useLoading(async () => {
+  try {
+    if (!email.value) {
+      throw new Error("Please enter your email")
+    }
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.verifyOtp({
+      email: email.value,
+      token: token.value,
+      type: "email",
+    })
+    console.log({ session })
+    if (error) throw error
+    router.push("/")
+  } catch (error: any) {
+    alert(error.error_description || error.message)
+  }
+})
 </script>

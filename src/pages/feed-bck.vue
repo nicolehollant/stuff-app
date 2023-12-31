@@ -10,7 +10,7 @@
         </p>
       </div>
       <div class="flex items-center -space-x-px">
-        <NuxtLink :to="`/feed?date=${pagination.prev}`">
+        <NuxtLink :to="`/?date=${pagination.prev}`">
           <SenpButton
             size="sm"
             square
@@ -21,7 +21,7 @@
             leading="mdi:chevron-left"
           />
         </NuxtLink>
-        <NuxtLink :to="`/feed?date=${pagination.today}`">
+        <NuxtLink :to="`/?date=${pagination.today}`">
           <SenpButton
             size="sm"
             square
@@ -32,7 +32,7 @@
             intent="secondary"
           />
         </NuxtLink>
-        <NuxtLink :to="`/feed?date=${pagination.next}`">
+        <NuxtLink :to="`/?date=${pagination.next}`">
           <SenpButton
             size="sm"
             square
@@ -276,7 +276,7 @@ watch(
 onMounted(() => {
   if (!route.query?.date) {
     const date = DateTime.local().toISODate()
-    router.push(`/feed?date=${date}`)
+    router.push(`/?date=${date}`)
     return
   }
   const date = DateTime.fromISO(route.query.date + "")

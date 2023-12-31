@@ -1,59 +1,110 @@
 <template>
   <div
     v-if="feedState.date"
-    class="grid grid-rows-[auto,minmax(0,1fr)] gap-4 h-full overflow-auto"
+    class="relative grid grid-rows-[auto,minmax(0,1fr)] h-full"
   >
-    <div class="flex items-center justify-between gap-4 px-4 pt-4">
-      <div>
-        <h1 class="text-xl">
-          {{
-            DateTime.fromISO(feedState.date).toLocaleString(DateTime.DATE_FULL)
-          }}
+    <FeedWeekdays
+      mode="day"
+      :feed-pagination="feedPagination"
+      :date-bounds="dateBounds"
+      :feed-state="feedState"
+      class="sticky top-16 bg-gray-950/60 backdrop-blur"
+    />
+    <SafeTeleport to="#header-leading">
+      <div class="w-max text-right h-16 flex items-center bg-gray-900/40 px-4">
+        <h1 class="text-xl hidden md:inline-block leading-tight">
+          <span class="font-black tracking-tight">
+            {{
+              [
+                DateTime.fromISO(feedState.date).monthLong,
+                DateTime.fromISO(feedState.date).day,
+              ].join(" ")
+            }},
+          </span>
+          <span class="font-light text-gray-200">
+            {{ " " + DateTime.fromISO(feedState.date).year }}
+          </span>
         </h1>
-        <p class="text-xs text-gray-500">
-          {{
-            DateTime.fromISO(feedState.date).toLocaleString(DateTime.DATE_SHORT)
-          }}
-        </p>
+        <h1 class="md:hidden text-base">
+          <span class="font-black tracking-tight">
+            {{
+              [
+                DateTime.fromISO(feedState.date).monthShort,
+                DateTime.fromISO(feedState.date).day,
+              ].join(" ")
+            }},
+          </span>
+          <span class="font-light text-gray-200">
+            {{ " " + DateTime.fromISO(feedState.date).year }}
+          </span>
+        </h1>
       </div>
-      <div class="flex items-center -space-x-px">
-        <NuxtLink :to="`/feed?date=${feedPagination.prev}`">
+    </SafeTeleport>
+    <SafeTeleport to="#header-trailing">
+      <div class="flex -space-x-px">
+        <NuxtLink
+          v-slot="{ navigate, href }"
+          custom
+          :to="`/?date=${feedPagination.prev}`"
+        >
           <SenpButton
-            size="sm"
+            :href="href"
+            size="xs"
+            class="h-full"
             square
             :classes="{
               button: '!bg-gray-900 border border-gray-800 !rounded-r-none',
             }"
             intent="secondary"
             leading="mdi:chevron-left"
+            @click="navigate"
           />
         </NuxtLink>
-        <NuxtLink :to="`/feed?date=${feedPagination.today}`">
+        <NuxtLink
+          v-slot="{ navigate, href }"
+          custom
+          :to="`/?date=${feedPagination.today}`"
+        >
           <SenpButton
-            size="sm"
+            :href="href"
+            size="xs"
+            class="h-full"
             square
-            label="Today"
             :classes="{
               button: '!bg-gray-900 border border-gray-800 !rounded-none',
             }"
             intent="secondary"
-          />
+            @click="navigate"
+            >Today</SenpButton
+          >
         </NuxtLink>
-        <NuxtLink :to="`/feed?date=${feedPagination.next}`">
+        <NuxtLink
+          v-slot="{ navigate, href }"
+          custom
+          :to="`/?date=${feedPagination.next}`"
+        >
           <SenpButton
-            size="sm"
+            :href="href"
+            size="xs"
+            class="h-full"
             square
             :classes="{
               button: '!bg-gray-900 border border-gray-800 !rounded-l-none',
             }"
             intent="secondary"
             leading="mdi:chevron-right"
+            @click="navigate"
           />
         </NuxtLink>
       </div>
-    </div>
-    <p v-if="getStuffTypes.loading.value" class="px-4">loading...</p>
-    <div class="grid md:grid-cols-2 gap-4 h-full px-4 overflow-auto">
+    </SafeTeleport>
+    <p
+      v-if="!stuffTypes?.length && getStuffTypes.loading.value"
+      class="px-4 mt-4"
+    >
+      loading...
+    </p>
+    <div class="mt-4 grid md:grid-cols-2 gap-4 h-full px-4 overflow-auto">
       <button
         v-for="stuff in stuffTypes"
         :key="stuff.id"
@@ -130,6 +181,7 @@
 
 <script setup lang="ts">
 import { DateTime } from "luxon"
+import FeedWeekdays from "./FeedWeekdays.vue"
 
 const route = useRoute()
 const router = useRouter()
@@ -137,6 +189,7 @@ const router = useRouter()
 const {
   feedState,
   feedPagination,
+  dateBounds,
   stuffTypes,
   stuffEntries,
   getStuffTypes,
@@ -178,7 +231,7 @@ function editStuffType(val: typeof state.currentStuffType) {
 onMounted(() => {
   if (!route.query?.date) {
     const date = DateTime.local().toISODate()
-    router.push(`/feed?date=${date}`)
+    router.push(`/?date=${date}`)
     return
   }
   const date = DateTime.fromISO(route.query.date + "")
